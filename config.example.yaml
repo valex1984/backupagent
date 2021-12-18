@@ -1,0 +1,15 @@
+s3:
+    key: s3_key_here
+    secret: s3_secret_here
+    region: ru-moscow
+    endpoint: obs.ru-moscow-1.ru
+    bucket: test-obs
+    partSizeMB: 16
+https:
+    port: 9443
+    tlsKeyFile: tls.key
+    tlsCertFile: tls.crt
+    username: user
+    password: pass
+
+
