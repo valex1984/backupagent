@@ -11,5 +11,6 @@ https:
     tlsCertFile: tls.crt
     username: user
     password: pass
+lxdSocket: /var/snap/lxd/common/lxd/unix.socket
 
 
