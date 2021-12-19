@@ -21,6 +21,6 @@ func main() {
 		log.Fatal(err)
 	}
 	
-    log.Fatal(srv.Run())
+   srv.Run()
 }
 

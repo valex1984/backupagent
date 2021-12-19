@@ -8,13 +8,12 @@ import (
 	lxd "github.com/lxc/lxd/client"
 )
 
-func PrepareLxcBackupRequest(containerName string, name string, lxc *lxd.InstanceServer) (*http.Client, *http.Request, error) {
+func PrepareLxcBackupRequest(containerName string, name string, lxc lxd.InstanceServer) (*http.Client, *http.Request, error) {
 
-	i := *lxc
-	if !i.HasExtension("container_backup") {
+	if !lxc.HasExtension("container_backup") {
 		return nil, nil, fmt.Errorf("the server is missing the required \"container_backup\" API extension")
 	}
-	client, err := i.GetHTTPClient()
+	client, err := lxc.GetHTTPClient()
 	if err != nil {
 		return nil, nil, err
 	}

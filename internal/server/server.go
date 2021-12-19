@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"log"
 
 	"github.com/gorilla/mux"
 	lxd "github.com/lxc/lxd/client"
@@ -36,7 +37,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	is, err := lxd.ConnectLXDUnix("/var/snap/lxd/common/lxd/unix.socket", nil)
+	is, err := lxd.ConnectLXDUnix(cfg.LxdSocket, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -67,18 +68,17 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	return &s, nil
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
 	go func() {
-		s.HttpSrv.ListenAndServeTLS(s.cfg.Htts.TlsCertFiel, s.cfg.Htts.TlsKeyFile)
+		log.Fatal(s.HttpSrv.ListenAndServeTLS(s.cfg.Htts.TlsCertFiel, s.cfg.Htts.TlsKeyFile))
 	}()
-
+	log.Println("agent started")
 	<-ctx.Done()
-	return nil
-
+	log.Println("agent stopped")
 }
 
 func (s *Server) BasicAuth(handler http.HandlerFunc) http.HandlerFunc {
@@ -129,13 +129,13 @@ func (s *Server) restoreLxcHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) backup(containerName string, name string) (int, error) {
 
-	c, req, err := utils.PrepareLxcBackupRequest(containerName, name, s.lxd)
+	c, req, err := utils.PrepareLxcBackupRequest(containerName, name, *s.lxd)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 	response, err := c.Do(req)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 	if response.StatusCode >= 300 {
 		return response.StatusCode, nil
@@ -145,16 +145,16 @@ func (s *Server) backup(containerName string, name string) (int, error) {
 	var r io.Reader = response.Body
 	err = s.s3.Upload(name, &r)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
-	return 200, nil
+	return http.StatusOK, nil
 }
 
 func (s *Server) restore(containerName string, name string) (int, error) {
 
 	r, err := s.s3.Download(name)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 	defer r.Body.Close()
 
@@ -163,12 +163,7 @@ func (s *Server) restore(containerName string, name string) (int, error) {
 		lxd.ContainerBackupArgs{BackupFile: r.Body})
 
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
-
-	// if response.StatusCode >= 300 {
-	// 	return response.StatusCode, nil
-	// }
-	// log.Println(len(buffer.Bytes()))
-	return 200, nil
+	return http.StatusOK, nil
 }

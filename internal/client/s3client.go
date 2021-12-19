@@ -13,7 +13,6 @@ import (
 
 type S3client struct {
 	uploader   *s3manager.Uploader
-	downloader *s3manager.Downloader
 	client	   *s3p.S3
 	bucket     string
 }
@@ -32,12 +31,9 @@ func NewS3client(cfg *config.Config) (*S3client, error) {
 	uploader := s3manager.NewUploader(sess, func(u *s3manager.Uploader) {
 		u.PartSize = buf
 	})
-	downloader := s3manager.NewDownloader(sess, func(d *s3manager.Downloader) {
-		d.PartSize = buf
-	})
 
 	client := s3p.New(sess)
-	return &S3client{uploader: uploader, downloader: downloader, client: client, bucket: cfg.S3.Bucket}, nil
+	return &S3client{uploader: uploader, client: client, bucket: cfg.S3.Bucket}, nil
 }
 
 func (s3 *S3client) Upload(backupName string, r *io.Reader) error {

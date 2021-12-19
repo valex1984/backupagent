@@ -18,6 +18,7 @@ func init() {
 type Config struct {
 	S3   S3    `mapstructure:"s3" validate:"required"`
 	Htts Https `mapstructure:"https" validate:"required"`
+	LxdSocket string  `mapstructure:"lxdSocket" validate:"required"`
 }
 
 type S3 struct {
